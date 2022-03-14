@@ -1,22 +1,23 @@
-const jwt = require('jsonwebtoken');
-const secret = process.env.SECRET;
+const jwt = require("express-jwt");
+const jwks = require("jwks-rsa")
 
-function authenticate(req, res, next) {
-  const token = req.headers['x-auth-token'];
+// const secret = process.env.SECRET;
 
-  try {
-    const payload = jwt.verify(
-      token,
-      Buffer.from(secret, 'base64')
-    );
+function authenticate() {
 
-    req.user = payload;
-    next();
-  } catch (error) {
-    res.status(401).send({
-      error: 'Unable to authenticate - please use a valid token'
-    });
-  }
+  const jwtCheck = jwt({
+    secret: jwks.expressJwtSecret({
+        cache: true,
+        rateLimit: true,
+        jwksRequestsPerMinute: 5,
+        jwksUri: 'https://dev-shqzo9iz.eu.auth0.com/.well-known/jwks.json'
+  }),
+  audience: 'http://localhost:8080',
+  issuer: 'https://dev-shqzo9iz.eu.auth0.com/',
+  algorithms: ['RS256']
+}).unless({path: ['/']});
+return jwtCheck;
+
 }
 
 module.exports = {
