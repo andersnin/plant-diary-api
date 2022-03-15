@@ -3,7 +3,9 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 
-const { addPlant } = require("./services/database");
+// IMPORT DB FUNCTIONS
+
+const { addPlant, getPlantsByUserId } = require("./services/database");
 
 const { authenticate } = require("./middleware");
 const port = process.env.PORT;
@@ -16,12 +18,6 @@ app.listen(port, () => {
 });
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
-// app.use((req, res, next) => {
-//   const error = new Error('Not Found');
-//   error.status = 404;
-//   next(error);
-// });
 
 app.use((error, req, res, next) => {
   const status = error.status;
@@ -39,8 +35,18 @@ app.get("/test", (req, res) => {
   res.send({ message: "Hello from PlantDiary API!", info: req.user });
 });
 
-app.get("/getplants", (req, res) => {
-  res.send({ message: "Here is your plants", info: req.user });
+app.get("/getplants", async (req, res) => {
+  const userId = req.user.sub.split("|")[1];
+
+  try {
+    const plantList = await getPlantsByUserId(userId);
+    res.send(plantList);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      error: "Unable to contact database - please try again later",
+    });
+  }
 });
 
 app.post("/add", async (req, res) => {
